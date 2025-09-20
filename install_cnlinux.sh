@@ -515,6 +515,75 @@ install_chinese_ime() {
                     else
                         echo "System tray extension installation failed"
                     fi
+                    
+                    dash2dock_url="https://extensions.gnome.org/extension-data/dash2dock-liteicedman.github.com.v75.shell-extension.zip"
+                    dash2dock_id="dash2dock@icedman.github.com"
+                    dash2dock_temp="/tmp/dash2dock.zip"
+                    if curl -L -o "$dash2dock_temp" "$dash2dock_url"; then
+                        for user_home in $ALL_USERS; do
+                            [ -d "$user_home" ] || continue
+                            user_name="$(stat -c '%U' "$user_home" 2>/dev/null)"
+                            user_extensions_dir="$user_home/.local/share/gnome-shell/extensions"
+                            dash2dock_dir="$user_extensions_dir/$dash2dock_id"
+                            
+                            sudo -u "$user_name" mkdir -p "$dash2dock_dir"
+                            
+                            if sudo -u "$user_name" unzip -o "$dash2dock_temp" -d "$dash2dock_dir" >/dev/null 2>&1; then
+                                echo "Installed Dash2Dock Lite extension for user: $user_home"
+                            else
+                                echo "Failed to install Dash2Dock Lite extension for user: $user_home"
+                            fi
+                        done
+                        rm -f "$dash2dock_temp"
+                    else
+                        echo "Dash2Dock Lite extension installation failed"
+                    fi
+                    
+                    hidetopbar_url="https://extensions.gnome.org/extension-data/hidetopbarmathieu.bidon.ca.v121.shell-extension.zip"
+                    hidetopbar_id="hidetopbar@mathieu.bidon.ca"
+                    hidetopbar_temp="/tmp/hidetopbar.zip"
+                    if curl -L -o "$hidetopbar_temp" "$hidetopbar_url"; then
+                        for user_home in $ALL_USERS; do
+                            [ -d "$user_home" ] || continue
+                            user_name="$(stat -c '%U' "$user_home" 2>/dev/null)"
+                            user_extensions_dir="$user_home/.local/share/gnome-shell/extensions"
+                            hidetopbar_dir="$user_extensions_dir/$hidetopbar_id"
+                            
+                            sudo -u "$user_name" mkdir -p "$hidetopbar_dir"
+                            
+                            if sudo -u "$user_name" unzip -o "$hidetopbar_temp" -d "$hidetopbar_dir" >/dev/null 2>&1; then
+                                echo "Installed Hide Top Bar extension for user: $user_home"
+                            else
+                                echo "Failed to install Hide Top Bar extension for user: $user_home"
+                            fi
+                        done
+                        rm -f "$hidetopbar_temp"
+                    else
+                        echo "Hide Top Bar extension installation failed"
+                    fi
+                    
+                    addtodesktop_url="https://extensions.gnome.org/extension-data/add-to-desktoptommimon.github.com.v14.shell-extension.zip"
+                    addtodesktop_id="add-to-desktop@tommimon.github.com"
+                    addtodesktop_temp="/tmp/addtodesktop.zip"
+                    if curl -L -o "$addtodesktop_temp" "$addtodesktop_url"; then
+                        for user_home in $ALL_USERS; do
+                            [ -d "$user_home" ] || continue
+                            user_name="$(stat -c '%U' "$user_home" 2>/dev/null)"
+                            user_extensions_dir="$user_home/.local/share/gnome-shell/extensions"
+                            addtodesktop_dir="$user_extensions_dir/$addtodesktop_id"
+                            
+                            sudo -u "$user_name" mkdir -p "$addtodesktop_dir"
+                            
+                            if sudo -u "$user_name" unzip -o "$addtodesktop_temp" -d "$addtodesktop_dir" >/dev/null 2>&1; then
+                                echo "Installed Add to Desktop extension for user: $user_home"
+                            else
+                                echo "Failed to install Add to Desktop extension for user: $user_home"
+                            fi
+                        done
+                        rm -f "$addtodesktop_temp"
+                    else
+                        echo "Add to Desktop extension installation failed"
+                    fi
                 elif [ "$desktop" = "cosmic" ]; then
                     dash_to_dock_url="https://extensions.gnome.org/extension-data/dash-to-dock-cosmic-halfmexicanhalfamazinggmail.com.v23.shell-extension.zip"
                     dash_to_dock_id="dash-to-dock@cosmic-halfmexicanhalfamazing.gmail.com"

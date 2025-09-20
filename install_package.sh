@@ -200,7 +200,7 @@ install_flatpak() {
     esac
     
     if ! flatpak remote-list | grep -q "^flathub\b"; then
-        flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+        flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     fi
     flatpak remote-modify --system flathub --url=https://mirrors.ustc.edu.cn/flathub 2>/dev/null || flatpak remote-modify --user flathub --url=https://mirrors.ustc.edu.cn/flathub
 
