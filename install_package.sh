@@ -164,11 +164,24 @@ install_flatpak() {
     
     case $PKG_MANAGER in
         "pacman")
-            sudo pacman -S --noconfirm flatpak
+            sudo pacman -S --noconfirm flatpak fuse2
             ;;
         "apt")
             sudo apt install -y flatpak
             if grep -q "ubuntu" /etc/os-release; then
+                ubuntu_version=$(grep VERSION_ID /etc/os-release | cut -d'"' -f2)
+                if [ "$(echo $ubuntu_version | cut -d'.' -f1)" -ge 24 ]; then
+                    # Ubuntu 24.04+
+                    sudo add-apt-repository universe
+                    sudo apt install -y libfuse2t64
+                elif [ "$(echo $ubuntu_version | cut -d'.' -f1)" -ge 22 ]; then
+                    # Ubuntu 22.04+
+                    sudo add-apt-repository universe
+                    sudo apt install -y libfuse2
+                else
+                    # Ubuntu 21.10 and below
+                    sudo apt install -y fuse libfuse2
+                fi
             	# sudo apt install -y software-properties-common
             	# sudo add-apt-repository ppa:appimagelauncher-team/stable -y
             	# sudo apt update
@@ -177,21 +190,25 @@ install_flatpak() {
                     sudo apt remove -y appimagelauncher
                     sudo add-apt-repository --remove ppa:appimagelauncher-team/stable -y
                 fi
+            else
+                sudo apt install -y fuse libfuse2
             fi
                             
             ;;
         "dnf")
-            sudo dnf install -y flatpak
+            sudo dnf install -y flatpak fuse fuse-libs
             ;;
         "yum")
             sudo yum install -y flatpak
+            # CentOS/RHEL needs to install fuse-sshfs from EPEL for FUSE support
+            sudo yum --enablerepo=epel -y install fuse-sshfs
             ;;
         "zypper")
-            sudo zypper install -y flatpak
+            sudo zypper install -y flatpak fuse libfuse2
             ;;
         
         "eopkg")
-            sudo eopkg install -y flatpak
+            sudo eopkg install -y flatpak fuse
             ;;
         *)
             echo "Cannot install Flatpak, unsupported package manager"
