@@ -452,18 +452,18 @@ install_chinese_ime() {
             "gnome"|"anduin"|"cosmic"|"pantheon")
                 case $PKG_MANAGER in
                     "pacman")
-                        sudo pacman -S --noconfirm gnome-shell-extensions
+                        sudo pacman -S --noconfirm gnome-tweaks
                         ;;
                     "apt")
-                        sudo apt install -y gnome-shell-extension-manager
+                        sudo apt install -y gnome-shell-extension-manager gnome-tweaks
                         ;;
                     "dnf"|"yum")
                         ;;
                     "zypper")
-                        sudo zypper install -y gnome-shell-extensions
+                        sudo zypper install -y gnome-tweaks
                         ;;
                     "eopkg")
-                        sudo eopkg install -y gnome-shell-extensions
+                        sudo eopkg install -y gnome-tweaks
                         ;;
                 esac
 
