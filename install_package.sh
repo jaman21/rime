@@ -172,11 +172,11 @@ install_flatpak() {
                 ubuntu_version=$(grep VERSION_ID /etc/os-release | cut -d'"' -f2)
                 if [ "$(echo $ubuntu_version | cut -d'.' -f1)" -ge 24 ]; then
                     # Ubuntu 24.04+
-                    sudo add-apt-repository universe
+                    sudo add-apt-repository universe -y
                     sudo apt install -y libfuse2t64
                 elif [ "$(echo $ubuntu_version | cut -d'.' -f1)" -ge 22 ]; then
                     # Ubuntu 22.04+
-                    sudo add-apt-repository universe
+                    sudo add-apt-repository universe -y
                     sudo apt install -y libfuse2
                 else
                     # Ubuntu 21.10 and below
@@ -219,7 +219,7 @@ install_flatpak() {
     if ! flatpak remote-list | grep -q "^flathub\b"; then
         flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     fi
-    flatpak remote-modify --system flathub --url=https://mirrors.ustc.edu.cn/flathub 2>/dev/null || flatpak remote-modify --user flathub --url=https://mirrors.ustc.edu.cn/flathub
+    flatpak remote-modify --system flathub --url=https://mirrors.ustc.edu.cn/flathub || flatpak remote-modify --user flathub --url=https://mirrors.ustc.edu.cn/flathub
 
     configure_flatpak_env
 

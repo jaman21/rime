@@ -1,4 +1,5 @@
 #!/bin/sh
+
 set -e
 
 PKG_MANAGER=""
@@ -6,7 +7,6 @@ DESKTOPS=""
 ALL_USERS=""
 
 pause_if_tty() {
-    # 仅在交互式终端时暂停等待回车; 在管道/非交互环境下直接跳过
     if [ -t 0 ]; then
         [ -n "$1" ] && printf "%s" "$1"
         read -r _ || true
@@ -279,7 +279,7 @@ get_all_users() {
 
 enable_epel() {
     if [ -f /etc/os-release ]; then
-        . /etc/os-release
+        ID=$(grep -w "^ID=" /etc/os-release | cut -d'=' -f2 | tr -d '"')
     fi
 
     case "$ID" in
@@ -445,6 +445,7 @@ EOF
     fi
 }
 
+
 install_chinese_ime() {
     for desktop in $DESKTOPS; do
         case $desktop in
@@ -461,7 +462,7 @@ install_chinese_ime() {
                         fi
                         ;;
                     "dnf"|"yum")
-                        sudo ${PKG_MANAGER} install -y gnome-shell gnome-tweaks gnome-extensions-app
+                        sudo "${PKG_MANAGER}" install -y gnome-shell gnome-tweaks gnome-extensions-app
                         ;;
                     "zypper")
                         sudo zypper install -y gnome-shell gnome-tweaks gnome-extensions-app
@@ -471,8 +472,7 @@ install_chinese_ime() {
                         ;;
                 esac
 
-				local user_name
-
+		        user_name=""
                 kimpanel_url="https://extensions.gnome.org/extension-data/kimpanelkde.org.v89.shell-extension.zip"
                 kimpanel_id="kimpanel@kde.org"
                 kimpanel_temp="/tmp/kimpanel.zip"
@@ -493,7 +493,6 @@ install_chinese_ime() {
                         fi
                     done
                     rm -f "$kimpanel_temp"
-                    gnome-extensions enable "$kimpanel_id"
                 else
                     echo "Failed to download or install Kimpanel extension"
                     exit
@@ -502,13 +501,13 @@ install_chinese_ime() {
                 if [ "$desktop" = "gnome" ]; then
                     tray_url="https://extensions.gnome.org/extension-data/appindicatorsupportrgcjonas.gmail.com.v60.shell-extension.zip"
                     tray_id="appindicatorsupport@rgcjonas.gmail.com"
-                    tray_temp="/tmp/systemtray.zip"                    
-				    if curl -L -o "$tray_temp" "$tray_url"; then
+                    tray_temp="/tmp/systemtray.zip"
+                    if curl -L -o "$tray_temp" "$tray_url"; then
                         for user_home in $ALL_USERS; do
                             [ -d "$user_home" ] || continue
                             user_name="$(stat -c '%U' "$user_home" 2>/dev/null)"
                             if command -v gnome-extensions >/dev/null 2>&1; then
-							    if sudo -u "$user_name" env HOME="$user_home" gnome-extensions install -f "$tray_temp" >/dev/null 2>&1; then
+                                if sudo -u "$user_name" env HOME="$user_home" gnome-extensions install -f "$tray_temp"; then
                                     echo "Installed system tray extension for user: $user_home"
                                 else
                                     echo "Failed to install system tray extension for user: $user_home"
@@ -520,7 +519,6 @@ install_chinese_ime() {
                             fi
                         done
                         rm -f "$tray_temp"
-					    gnome-extensions enable "$tray_id"
                     else
                         echo "System tray extension installation failed"
                         exit
@@ -529,12 +527,12 @@ install_chinese_ime() {
                     dash2dock_url="https://extensions.gnome.org/extension-data/dash2dock-liteicedman.github.com.v75.shell-extension.zip"
                     dash2dock_id="dash2dock-lite@icedman.github.com"
                     dash2dock_temp="/tmp/dash2dock.zip"
-				    if curl -L -o "$dash2dock_temp" "$dash2dock_url"; then
+                    if curl -L -o "$dash2dock_temp" "$dash2dock_url"; then
                         for user_home in $ALL_USERS; do
                             [ -d "$user_home" ] || continue
                             user_name="$(stat -c '%U' "$user_home" 2>/dev/null)"
                             if command -v gnome-extensions >/dev/null 2>&1; then
-							    if sudo -u "$user_name" env HOME="$user_home" gnome-extensions install -f "$dash2dock_temp" >/dev/null 2>&1; then
+                                if sudo -u "$user_name" env HOME="$user_home" gnome-extensions install -f "$dash2dock_temp"; then
                                     echo "Installed Dash2Dock Lite extension for user: $user_home"
                                 else
                                     echo "Failed to install Dash2Dock Lite extension for user: $user_home"
@@ -546,10 +544,9 @@ install_chinese_ime() {
                             fi
                         done
                         rm -f "$dash2dock_temp"
-					    gnome-extensions enable "$dash2dock_id"
-					    if grep -q "ubuntu" /etc/os-release; then
-						    gnome-extensions disable ubuntu-dock@ubuntu.com
-						fi
+                        if grep -q "ubuntu" /etc/os-release; then
+                            gnome-extensions disable ubuntu-dock@ubuntu.com
+                        fi
                     else
                         echo "Dash2Dock Lite extension installation failed"
                         exit
@@ -558,12 +555,12 @@ install_chinese_ime() {
                     hidetopbar_url="https://extensions.gnome.org/extension-data/hidetopbarmathieu.bidon.ca.v121.shell-extension.zip"
                     hidetopbar_id="hidetopbar@mathieu.bidon.ca"
                     hidetopbar_temp="/tmp/hidetopbar.zip"
-				    if curl -L -o "$hidetopbar_temp" "$hidetopbar_url"; then
+                    if curl -L -o "$hidetopbar_temp" "$hidetopbar_url"; then
                         for user_home in $ALL_USERS; do
                             [ -d "$user_home" ] || continue
                             user_name="$(stat -c '%U' "$user_home" 2>/dev/null)"
                             if command -v gnome-extensions >/dev/null 2>&1; then
-							    if sudo -u "$user_name" env HOME="$user_home" gnome-extensions install -f "$hidetopbar_temp" >/dev/null 2>&1; then
+                                if sudo -u "$user_name" env HOME="$user_home" gnome-extensions install -f "$hidetopbar_temp"; then
                                     echo "Installed Hide Top Bar extension for user: $user_home"
                                 else
                                     echo "Failed to install Hide Top Bar extension for user: $user_home"
@@ -575,7 +572,6 @@ install_chinese_ime() {
                             fi
                         done
                         rm -f "$hidetopbar_temp"
-					    gnome-extensions enable "$hidetopbar_id"
                     else
                         echo "Hide Top Bar extension installation failed"
                         exit
@@ -584,12 +580,12 @@ install_chinese_ime() {
                     addtodesktop_url="https://extensions.gnome.org/extension-data/add-to-desktoptommimon.github.com.v14.shell-extension.zip"
                     addtodesktop_id="add-to-desktop@tommimon.github.com"
                     addtodesktop_temp="/tmp/addtodesktop.zip"
-				    if curl -L -o "$addtodesktop_temp" "$addtodesktop_url"; then
+                    if curl -L -o "$addtodesktop_temp" "$addtodesktop_url"; then
                         for user_home in $ALL_USERS; do
                             [ -d "$user_home" ] || continue
                             user_name="$(stat -c '%U' "$user_home" 2>/dev/null)"
                             if command -v gnome-extensions >/dev/null 2>&1; then
-							    if sudo -u "$user_name" env HOME="$user_home" gnome-extensions install -f "$addtodesktop_temp" >/dev/null 2>&1; then
+                                if sudo -u "$user_name" env HOME="$user_home" gnome-extensions install -f "$addtodesktop_temp"; then
                                     echo "Installed Add to Desktop extension for user: $user_home"
                                 else
                                     echo "Failed to install Add to Desktop extension for user: $user_home"
@@ -601,7 +597,6 @@ install_chinese_ime() {
                             fi
                         done
                         rm -f "$addtodesktop_temp"
-					    gnome-extensions enable "$addtodesktop_id"
                     else
                         echo "Add to Desktop extension installation failed"
                         exit
@@ -611,12 +606,12 @@ install_chinese_ime() {
                     dash_to_dock_url="https://extensions.gnome.org/extension-data/dash-to-dock-cosmic-halfmexicanhalfamazinggmail.com.v23.shell-extension.zip"
                     dash_to_dock_id="dash-to-dock@cosmic-halfmexicanhalfamazing.gmail.com"
                     dash_to_dock_temp="/tmp/dash-to-dock.zip"
-				    if curl -L -o "$dash_to_dock_temp" "$dash_to_dock_url"; then
+                    if curl -L -o "$dash_to_dock_temp" "$dash_to_dock_url"; then
                         for user_home in $ALL_USERS; do
                             [ -d "$user_home" ] || continue
                             user_name="$(stat -c '%U' "$user_home" 2>/dev/null)"
                             if command -v gnome-extensions >/dev/null 2>&1; then
-							    if sudo -u "$user_name" env HOME="$user_home" gnome-extensions install -f "$dash_to_dock_temp" >/dev/null 2>&1; then
+                                if sudo -u "$user_name" env HOME="$user_home" gnome-extensions install -f "$dash_to_dock_temp"; then
                                     echo "Installed dash-to-dock extension for user: $user_home"
                                 else
                                     echo "Failed to install dash-to-dock extension for user: $user_home"
@@ -628,7 +623,6 @@ install_chinese_ime() {
                             fi
                         done
                         rm -f "$dash_to_dock_temp"
-					    gnome-extensions enable "$dash_to_dock_id"
                     else
                         echo "dash-to-dock extension installation failed"
                         exit
