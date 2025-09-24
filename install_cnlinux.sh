@@ -339,7 +339,7 @@ install_standard_fonts() {
             case $desktop in
                 "gnome")
                     if [ -f /etc/os-release ] && grep -q "ubuntu" /etc/os-release; then
-                        sudo apt install -y language-pack-gnome-zh-hant language-pack-gnome-zh-hans
+                        sudo apt install -y language-pack-gnome-zh-hans
                     fi
                     sudo -u "$user_name" env HOME="$user_home" gsettings reset-recursively org.gnome.desktop.interface 2>/dev/null
                     sudo -u "$user_name" env HOME="$user_home" gsettings reset-recursively org.gnome.desktop.wm.preferences 2>/dev/null
@@ -380,8 +380,7 @@ install_chinese_locale() {
         "apt")
             if [ -f /etc/debian_version ]; then
                 if grep -q "ubuntu" /etc/os-release; then
-                    sudo apt install -y language-pack-zh-hans language-pack-zh-hans-base language-pack-zh-hant language-pack-zh-hant-base \
-                        libreoffice-l10n-zh-cn libreoffice-l10n-zh-tw libreoffice-help-zh-cn libreoffice-help-zh-tw
+                    sudo apt install -y language-pack-zh-hans language-pack-zh-hans-base
                 else
                     sudo apt install -y locales
                 fi
@@ -452,22 +451,27 @@ install_chinese_ime() {
             "gnome"|"anduin"|"cosmic"|"pantheon")
                 case $PKG_MANAGER in
                     "pacman")
-                        sudo pacman -S --noconfirm gnome-tweaks
+                        sudo pacman -S --noconfirm gnome-shell gnome-tweaks gnome-extensions-app
                         ;;
                     "apt")
-                        sudo apt install -y gnome-shell-extension-manager gnome-tweaks
+                        if [ -f /etc/os-release ] && grep -qi ubuntu /etc/os-release; then
+                            sudo apt install -y gnome-shell gnome-tweaks gnome-shell-extension-manager nautilus-admin
+                        else
+                            sudo apt install -y gnome-shell gnome-tweaks gnome-extensions-app nautilus-admin
+                        fi
                         ;;
                     "dnf"|"yum")
+                        sudo ${PKG_MANAGER} install -y gnome-shell gnome-tweaks gnome-extensions-app
                         ;;
                     "zypper")
-                        sudo zypper install -y gnome-tweaks
+                        sudo zypper install -y gnome-shell gnome-tweaks gnome-extensions-app
                         ;;
                     "eopkg")
-                        sudo eopkg install -y gnome-tweaks
+                        sudo eopkg install -y gnome-shell gnome-tweaks gnome-extensions-app
                         ;;
                 esac
 
-                user_name=""
+				local user_name
 
                 kimpanel_url="https://extensions.gnome.org/extension-data/kimpanelkde.org.v89.shell-extension.zip"
                 kimpanel_id="kimpanel@kde.org"
@@ -476,137 +480,158 @@ install_chinese_ime() {
                     for user_home in $ALL_USERS; do
                         [ -d "$user_home" ] || continue
                         user_name="$(stat -c '%U' "$user_home" 2>/dev/null)"
-                        user_extensions_dir="$user_home/.local/share/gnome-shell/extensions"
-                        kimpanel_dir="$user_extensions_dir/$kimpanel_id"
-                        
-                        sudo -u "$user_name" mkdir -p "$kimpanel_dir"
-                        
-                        if sudo -u "$user_name" unzip -o "$kimpanel_temp" -d "$kimpanel_dir" >/dev/null 2>&1; then
-                            echo "Installed kimpanel extension for user: $user_home"
+                        if command -v gnome-extensions >/dev/null 2>&1; then
+                            if sudo -u "$user_name" env HOME="$user_home" gnome-extensions install -f "$kimpanel_temp" >/dev/null 2>&1; then
+                                echo "Kimpanel extension installed for user $user_home"
+                            else
+                                echo "Failed to install Kimpanel extension for user $user_home"
+                                exit
+                            fi
                         else
-                            echo "Failed to install kimpanel extension for user: $user_home"
+                            echo "gnome-extensions command not found"
+                            exit
                         fi
                     done
                     rm -f "$kimpanel_temp"
+                    gnome-extensions enable "$kimpanel_id"
                 else
-                    echo "Kimpanel extension installation failed"
+                    echo "Failed to download or install Kimpanel extension"
+                    exit
                 fi
-
+                
                 if [ "$desktop" = "gnome" ]; then
                     tray_url="https://extensions.gnome.org/extension-data/appindicatorsupportrgcjonas.gmail.com.v60.shell-extension.zip"
                     tray_id="appindicatorsupport@rgcjonas.gmail.com"
                     tray_temp="/tmp/systemtray.zip"                    
-                    if curl -L -o "$tray_temp" "$tray_url"; then
+				    if curl -L -o "$tray_temp" "$tray_url"; then
                         for user_home in $ALL_USERS; do
                             [ -d "$user_home" ] || continue
                             user_name="$(stat -c '%U' "$user_home" 2>/dev/null)"
-                            user_extensions_dir="$user_home/.local/share/gnome-shell/extensions"
-                            tray_dir="$user_extensions_dir/$tray_id"
-                            
-                            sudo -u "$user_name" mkdir -p "$tray_dir"
-                            
-                            if sudo -u "$user_name" unzip -o "$tray_temp" -d "$tray_dir" >/dev/null 2>&1; then
-                                echo "Installed system tray extension for user: $user_home"
+                            if command -v gnome-extensions >/dev/null 2>&1; then
+							    if sudo -u "$user_name" env HOME="$user_home" gnome-extensions install -f "$tray_temp" >/dev/null 2>&1; then
+                                    echo "Installed system tray extension for user: $user_home"
+                                else
+                                    echo "Failed to install system tray extension for user: $user_home"
+                                    exit
+                                fi
                             else
-                                echo "Failed to install system tray extension for user: $user_home"
+                                echo "gnome-extensions command not found"
+                                exit
                             fi
                         done
                         rm -f "$tray_temp"
+					    gnome-extensions enable "$tray_id"
                     else
                         echo "System tray extension installation failed"
+                        exit
                     fi
                     
                     dash2dock_url="https://extensions.gnome.org/extension-data/dash2dock-liteicedman.github.com.v75.shell-extension.zip"
-                    dash2dock_id="dash2dock@icedman.github.com"
+                    dash2dock_id="dash2dock-lite@icedman.github.com"
                     dash2dock_temp="/tmp/dash2dock.zip"
-                    if curl -L -o "$dash2dock_temp" "$dash2dock_url"; then
+				    if curl -L -o "$dash2dock_temp" "$dash2dock_url"; then
                         for user_home in $ALL_USERS; do
                             [ -d "$user_home" ] || continue
                             user_name="$(stat -c '%U' "$user_home" 2>/dev/null)"
-                            user_extensions_dir="$user_home/.local/share/gnome-shell/extensions"
-                            dash2dock_dir="$user_extensions_dir/$dash2dock_id"
-                            
-                            sudo -u "$user_name" mkdir -p "$dash2dock_dir"
-                            
-                            if sudo -u "$user_name" unzip -o "$dash2dock_temp" -d "$dash2dock_dir" >/dev/null 2>&1; then
-                                echo "Installed Dash2Dock Lite extension for user: $user_home"
+                            if command -v gnome-extensions >/dev/null 2>&1; then
+							    if sudo -u "$user_name" env HOME="$user_home" gnome-extensions install -f "$dash2dock_temp" >/dev/null 2>&1; then
+                                    echo "Installed Dash2Dock Lite extension for user: $user_home"
+                                else
+                                    echo "Failed to install Dash2Dock Lite extension for user: $user_home"
+                                    exit
+                                fi
                             else
-                                echo "Failed to install Dash2Dock Lite extension for user: $user_home"
+                                echo "gnome-extensions command not found"
+                                exit
                             fi
                         done
                         rm -f "$dash2dock_temp"
+					    gnome-extensions enable "$dash2dock_id"
+					    if grep -q "ubuntu" /etc/os-release; then
+						    gnome-extensions disable ubuntu-dock@ubuntu.com
+						fi
                     else
                         echo "Dash2Dock Lite extension installation failed"
+                        exit
                     fi
                     
                     hidetopbar_url="https://extensions.gnome.org/extension-data/hidetopbarmathieu.bidon.ca.v121.shell-extension.zip"
                     hidetopbar_id="hidetopbar@mathieu.bidon.ca"
                     hidetopbar_temp="/tmp/hidetopbar.zip"
-                    if curl -L -o "$hidetopbar_temp" "$hidetopbar_url"; then
+				    if curl -L -o "$hidetopbar_temp" "$hidetopbar_url"; then
                         for user_home in $ALL_USERS; do
                             [ -d "$user_home" ] || continue
                             user_name="$(stat -c '%U' "$user_home" 2>/dev/null)"
-                            user_extensions_dir="$user_home/.local/share/gnome-shell/extensions"
-                            hidetopbar_dir="$user_extensions_dir/$hidetopbar_id"
-                            
-                            sudo -u "$user_name" mkdir -p "$hidetopbar_dir"
-                            
-                            if sudo -u "$user_name" unzip -o "$hidetopbar_temp" -d "$hidetopbar_dir" >/dev/null 2>&1; then
-                                echo "Installed Hide Top Bar extension for user: $user_home"
+                            if command -v gnome-extensions >/dev/null 2>&1; then
+							    if sudo -u "$user_name" env HOME="$user_home" gnome-extensions install -f "$hidetopbar_temp" >/dev/null 2>&1; then
+                                    echo "Installed Hide Top Bar extension for user: $user_home"
+                                else
+                                    echo "Failed to install Hide Top Bar extension for user: $user_home"
+                                    exit
+                                fi
                             else
-                                echo "Failed to install Hide Top Bar extension for user: $user_home"
+                                echo "gnome-extensions command not found"
+                                exit
                             fi
                         done
                         rm -f "$hidetopbar_temp"
+					    gnome-extensions enable "$hidetopbar_id"
                     else
                         echo "Hide Top Bar extension installation failed"
+                        exit
                     fi
                     
                     addtodesktop_url="https://extensions.gnome.org/extension-data/add-to-desktoptommimon.github.com.v14.shell-extension.zip"
                     addtodesktop_id="add-to-desktop@tommimon.github.com"
                     addtodesktop_temp="/tmp/addtodesktop.zip"
-                    if curl -L -o "$addtodesktop_temp" "$addtodesktop_url"; then
+				    if curl -L -o "$addtodesktop_temp" "$addtodesktop_url"; then
                         for user_home in $ALL_USERS; do
                             [ -d "$user_home" ] || continue
                             user_name="$(stat -c '%U' "$user_home" 2>/dev/null)"
-                            user_extensions_dir="$user_home/.local/share/gnome-shell/extensions"
-                            addtodesktop_dir="$user_extensions_dir/$addtodesktop_id"
-                            
-                            sudo -u "$user_name" mkdir -p "$addtodesktop_dir"
-                            
-                            if sudo -u "$user_name" unzip -o "$addtodesktop_temp" -d "$addtodesktop_dir" >/dev/null 2>&1; then
-                                echo "Installed Add to Desktop extension for user: $user_home"
+                            if command -v gnome-extensions >/dev/null 2>&1; then
+							    if sudo -u "$user_name" env HOME="$user_home" gnome-extensions install -f "$addtodesktop_temp" >/dev/null 2>&1; then
+                                    echo "Installed Add to Desktop extension for user: $user_home"
+                                else
+                                    echo "Failed to install Add to Desktop extension for user: $user_home"
+                                    exit
+                                fi
                             else
-                                echo "Failed to install Add to Desktop extension for user: $user_home"
+                                echo "gnome-extensions command not found"
+                                exit
                             fi
                         done
                         rm -f "$addtodesktop_temp"
+					    gnome-extensions enable "$addtodesktop_id"
                     else
                         echo "Add to Desktop extension installation failed"
+                        exit
                     fi
+                    
                 elif [ "$desktop" = "cosmic" ]; then
                     dash_to_dock_url="https://extensions.gnome.org/extension-data/dash-to-dock-cosmic-halfmexicanhalfamazinggmail.com.v23.shell-extension.zip"
                     dash_to_dock_id="dash-to-dock@cosmic-halfmexicanhalfamazing.gmail.com"
                     dash_to_dock_temp="/tmp/dash-to-dock.zip"
-                    user_name=""
-                    if curl -L -o "$dash_to_dock_temp" "$dash_to_dock_url"; then
+				    if curl -L -o "$dash_to_dock_temp" "$dash_to_dock_url"; then
                         for user_home in $ALL_USERS; do
                             [ -d "$user_home" ] || continue
                             user_name="$(stat -c '%U' "$user_home" 2>/dev/null)"
-                            user_extensions_dir="$user_home/.local/share/gnome-shell/extensions"
-                            dash_to_dock_dir="$user_extensions_dir/$dash_to_dock_id"
-                            
-                            sudo -u "$user_name" mkdir -p "$dash_to_dock_dir"
-                            
-                            if sudo -u "$user_name" unzip -o "$dash_to_dock_temp" -d "$dash_to_dock_dir" >/dev/null 2>&1; then
-                                echo "Installed dash-to-dock extension for user: $user_home"
+                            if command -v gnome-extensions >/dev/null 2>&1; then
+							    if sudo -u "$user_name" env HOME="$user_home" gnome-extensions install -f "$dash_to_dock_temp" >/dev/null 2>&1; then
+                                    echo "Installed dash-to-dock extension for user: $user_home"
+                                else
+                                    echo "Failed to install dash-to-dock extension for user: $user_home"
+                                    exit
+                                fi
                             else
-                                echo "Failed to install dash-to-dock extension for user: $user_home"
+                                echo "gnome-extensions command not found"
+                                exit
                             fi
                         done
                         rm -f "$dash_to_dock_temp"
+					    gnome-extensions enable "$dash_to_dock_id"
                     else
                         echo "dash-to-dock extension installation failed"
+                        exit
                     fi
                 fi
                 ;;
